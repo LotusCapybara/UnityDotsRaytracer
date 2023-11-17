@@ -13,7 +13,7 @@ You can still execute it in Editor, but it's not going to run the whole logic, j
 # SAMPLE SCENES
 These 3 sample scenes are included in the project. You can build your own ones too (read below)
 
-(Scenes)[https://i.gyazo.com/f315a687544680c4393e5bb2e1a60c64.jpg]
+![Scenes](https://i.gyazo.com/f315a687544680c4393e5bb2e1a60c64.jpg)
 
 # USAGE
 Build the project using il2cpp, supporting unsafe code. 
