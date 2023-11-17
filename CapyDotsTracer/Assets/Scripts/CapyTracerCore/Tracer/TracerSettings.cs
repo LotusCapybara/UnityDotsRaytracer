@@ -1,13 +1,28 @@
 ﻿namespace CapyTracerCore.Core
 {
-    public static class TracerSettings
+    public enum EDiffuseMode : byte
     {
-        public static int MAX_ITERATIONS = 500;
-        public static int QTY_BOUNCES = 2;
+        Lambert, OrenNayar
+    }
 
-        public static int KDTREE_MAXDEPTH = 50;
-        public static int KDTREE_MAXTRIANGLES_PER_LEVEL = 1;
+    public enum ESpecularMode
+    {
+        BlinnPhong, CookTorrence
+    }
+    
+    public struct TracerSettings
+    {
+        public int width;
+        public int height;
+        public int maxIterations;
+        public int indirectBounces;
+        
+        public int bvhMaxDepth;
+        public int bvhTrianglesToExpand;
+        
+        public float indirectPower;
 
-        public static float INDIRECT_POWER = 1f;
+        public EDiffuseMode diffuseMode;
+        public ESpecularMode specularMode;
     }
 }

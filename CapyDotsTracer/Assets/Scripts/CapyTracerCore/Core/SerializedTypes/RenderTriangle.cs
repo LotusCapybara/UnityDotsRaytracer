@@ -17,41 +17,17 @@ namespace CapyTracerCore.Core
         public float3 normalC;
 
         public int materialIndex;
+        public int nodeIndex;
 
         // computed values
-        public float3 centerPoint;
-        public float3 p0p1;
-        public float3 p0p2;
-        public float3 edgeA;
-        public float3 edgeB;
-        public float3 faceNormal;
-        public BoundsBox bounds;
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float3 GetVertexPos(int index)
-        {
-            if (index == 0)
-                return posA;
-            if (index == 1)
-                return posB;
-            if (index == 2)
-                return posC;
-
-            throw new IndexOutOfRangeException();
-        }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float3 GetVertexNormal(int index)
-        {
-            if (index == 0)
-                return normalA;
-            if (index == 1)
-                return normalB;
-            if (index == 2)
-                return normalC;
-
-            throw new IndexOutOfRangeException();
-        }
+        // although you might think it's faster to cache these values, by not having them in memory you make
+        // locality of data easier when iterating over all the triangles because the size of the struct is smaller
+        // I ran some tests and having it like this instead of cached data it's between 4 and 8 times faster 
+        // (in my tests at least). That's the power of the CPU cache!
+        public float3 centerPoint => (posA + posB + posC) * 0.3333f;
+        public float3 p0p1 => posB - posA;
+        public float3 p0p2 => posC - posA;
+        public float3 faceNormal => (normalA + normalB + normalC) * 0.3333f;
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetVertexPos(int index, float3 value)
@@ -100,22 +76,6 @@ namespace CapyTracerCore.Core
             }
 
             throw new IndexOutOfRangeException();
-        }
-        
-
-        public void Compute()
-        {
-            centerPoint = (posA + posB + posC) / 3f;
-            faceNormal = (normalA + normalB + normalC) / 3f;
-
-            edgeA = posB - posA;
-            edgeB = posC - posB;
-
-            p0p1 = posB - posA;
-            p0p2 = posC - posA;
-
-            bounds = new BoundsBox();
-            bounds.ExpandWithTriangle(this);
         }
     }
 }

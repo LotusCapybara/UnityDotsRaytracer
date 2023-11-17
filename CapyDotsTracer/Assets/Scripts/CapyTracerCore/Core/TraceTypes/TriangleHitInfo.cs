@@ -10,5 +10,6 @@ namespace CapyTracerCore.Core
         public float3 position;
         public float3 incomingDirection;
         public int materialIndex;
+        public int nodeIndex;
     }
 }

@@ -8,9 +8,9 @@ namespace CapyTracerCore.Core
     {
         public float3 position;
         public float3 forward;
-        public float3 right;
         public float3 up;
-        public float horizontalSize;
+        public float3 right;
         public float fov;
+        public float horizontalSize;
     }
 }

@@ -1,4 +1,6 @@
-﻿using Unity.Mathematics;
+﻿using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
+using Unity.Mathematics;
 
 namespace CapyTracerCore.Core
 {
@@ -94,6 +96,50 @@ namespace CapyTracerCore.Core
             boundsB.max[axis] = max[axis];
 
             return (boundsA, boundsB);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float SquaredDistToPoint( in float3 p)
+        {
+            float Check(float pn, float  bmin, float bmax )
+            {
+                float result = 0;
+                float  v = pn;
+ 
+                if ( v < bmin ) 
+                {             
+                    float val = (bmin - v);             
+                    result += val * val;         
+                }         
+         
+                if ( v > bmax )
+                {
+                    float val = (v - bmax);
+                    result += val * val;
+                }
+
+                return result;
+            };
+ 
+            // Squared distance
+            float sq = 0f;
+ 
+            sq += Check( p.x, min.x, max.x );
+            sq += Check( p.y, min.y, max.y );
+            sq += Check( p.z, min.z, max.z );
+ 
+            return sq;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public (float3, float3, float3, float3, float3, float3, float3, float3) GetCorners()
+        {
+            float3 size = GetSize();
+
+
+            return (
+                min, min + new float3(size.x, 0, 0), min + new float3(0, 0, size.z), min + new float3(size.x, 0, size.z),
+                max, max - new float3(size.x, 0, 0), max - new float3(0, 0, size.z), max - new float3(size.x, 0, size.z));
         }
     }
 }

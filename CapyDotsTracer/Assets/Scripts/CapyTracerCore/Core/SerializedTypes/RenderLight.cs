@@ -1,7 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using CapyTracerCore.Core.Functions;
+﻿using System.Runtime.InteropServices;
 using Unity.Mathematics;
 
 namespace CapyTracerCore.Core
@@ -24,60 +21,58 @@ namespace CapyTracerCore.Core
         public float angle;
         public int type;
 
+        private const float ONE_OVER_360 = 1f / 360f;
+
         public float4 GetColorContribution(in TriangleHitInfo hitInfo, in RenderScene scene)
         {
             ELightType lightType = (ELightType)type;
-            switch (lightType)
-            {
-                case ELightType.Point:
-                    return ProcessAsPoint(hitInfo, scene);
-            }
 
-            return new float4(0, 0, 0, 1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float4 ProcessAsPoint(in TriangleHitInfo hitInfo, in RenderScene scene)
-        {
-            
-            
             float3 L = math.normalize(position - hitInfo.position);
+
+            if (lightType == ELightType.Directional)
+            {
+                L = -forward;
+            }
+            
             
             float NdotL = math.dot(hitInfo.normal, L);
             
             if (NdotL <= 0)
                 return new float4(0, 0, 0, 1);
-            
-            float dist = math.distance(position, hitInfo.position);
-            
+
             RenderRay ray = new RenderRay
             {
                 direction = L,
                 origin = hitInfo.position + L * 0.01f
             };
             
+            float dist = math.distance(position, hitInfo.position);
             
-            
-            TriangleHitInfo shadowHit = TraceCast.TryHitTriangle(ray, scene, dist, true);
-            
-            if (shadowHit.hitFound)
+            // shadow ray
+            if(scene.bvhNodes[0].TryHitTriangleFast(scene, ray, dist))
                 return new float4(0, 0, 0, 1);
 
-            
-            float power = 0.1f * intensity * (1f - Math.Clamp(dist / range, 0f, 1f));
-            
-            float diffuseTerm = LightFunctions.GetLambert(hitInfo.normal, L) * power;
-            float specularTerm = 0f;
-            
-            float surfaceRoughness = scene.materials[hitInfo.materialIndex].roughness;
-            
-            if (surfaceRoughness < 1f)
+            float power = intensity;
+                        
+            switch (lightType)
             {
-                float3 H = L + hitInfo.incomingDirection;
-                specularTerm = LightFunctions.GetBlinnPhong(H, hitInfo.normal, surfaceRoughness);
+                case ELightType.Point:
+                    power = intensity / (dist * dist);
+                    break;
+                case ELightType.Spot:
+
+                    float dotToOuter = math.dot(-L, forward);
+                    float spotAngleFactor = 1f - angle * ONE_OVER_360 ;
+
+                    if (dotToOuter <= spotAngleFactor)
+                        return 0;
+                    float angleDecay = math.saturate((dotToOuter - spotAngleFactor) / (1f - spotAngleFactor));
+                    power = intensity * angleDecay / (dist * dist); 
+                    break;
             }
-            
-            return color * (power * Math.Clamp(diffuseTerm + specularTerm, 0, 1));
+
+            return color * power;
         }
+        
     }
 }

@@ -8,9 +8,12 @@ namespace CapyTracerCore.Core
     {
         public float3 boundMin;
         public float3 boundMax;
-        public RenderMaterial[] materials;
         public SerializedCamera camera;
-        public RenderMesh[] meshes;
+        public int qtyMaterials;
+        public RenderMaterial[] materials;
+        public int qtyTriangles;
+        public RenderTriangle[] triangles;
+        public int qtyLights;
         public RenderLight[] lights;
     }
 }

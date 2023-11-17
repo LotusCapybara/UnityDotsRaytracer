@@ -23,21 +23,14 @@ namespace CapyTracerCore.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float4 ACESFilter(float4 color)
+        public static float4 ACESFilter(float4 x)
         {
-            color *= 0.6f;
             float a = 2.51f;
             float b = 0.03f;
             float c = 2.43f;
             float d = 0.59f;
             float e = 0.14f;
-
-            return new float4(
-                Math.Clamp((color.x * (a * color.x + b)) / (color.x * (c * color.x + d) + e), 0.0f, 1.0f),
-                Math.Clamp((color.y * (a * color.y + b)) / (color.y * (c * color.y + d) + e), 0.0f, 1.0f),
-                Math.Clamp((color.z * (a * color.z + b)) / (color.z * (c * color.z + d) + e), 0.0f, 1.0f),
-                1f
-            );
+            return math.saturate((x * (a * x + b)) / (x * (c * x + d) + e));
         }
     }
 }

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CapyTracerCore.Core;
-using Newtonsoft.Json;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -45,20 +44,18 @@ public class SceneExporter : MonoBehaviour
         List<Material> materials = new List<Material>();
 
         MeshRenderer[] meshes = _sceneContainer.transform.GetComponentsInChildren<MeshRenderer>();
-        scene.meshes = new RenderMesh[meshes.Length];
+
+        List<RenderTriangle> allTriangles = new List<RenderTriangle>();
 
         Bounds sceneBounds = new Bounds();
         
-        
-        for(int m = 0; m < scene.meshes.Length; m++)
+        for(int m = 0; m < meshes.Length; m++)
         {
             foreach (var meshRendererMaterial in meshes[m].sharedMaterials)
             {
                 if (!materials.Any( m => m.name == meshRendererMaterial.name))
                     materials.Add(meshRendererMaterial);
             }
-
-            bool isInvisibleBouncer = meshes[m].transform.GetComponent<InvisibleLightBouncer>() != null;
 
             var meshDef = meshes[m].GetComponent<MeshFilter>().sharedMesh;
 
@@ -107,16 +104,18 @@ public class SceneExporter : MonoBehaviour
                     
                         sceneBounds.Encapsulate(new Vector3(pos.x, pos.y, pos.z));
                     }
-                    
+
                     newMesh.triangles[t] = newTriangle;
 
                     t++;
                     
+                    allTriangles.Add(newTriangle);
                 }
-                scene.meshes[m] = newMesh;
             }
         }
 
+        scene.triangles = allTriangles.ToArray();
+        
         scene.boundMin = sceneBounds.min;
         scene.boundMax = sceneBounds.max;
 
@@ -130,29 +129,101 @@ public class SceneExporter : MonoBehaviour
             scene.materials[m] = new RenderMaterial
             {
                 color =  new float4(fromColor.r, fromColor.g, fromColor.b, 1f),
-                roughness = math.clamp(1f - materials[m].GetFloat("_Glossiness"), 0f, 1f),
+                roughness = math.clamp(1f - materials[m].GetFloat("_Smoothness"), 0f, 1f),
                 isEmissive = isEmissive
             };
         }
 
-        Debug.Log("Qty Meshes: " + scene.meshes.Length);
-        Debug.Log("Qty Triangles: " + scene.meshes[0].triangles.Length);
-
         return scene;
     }
 
-    public void GenerateAsJson()
-    {
-        var scene = CreateSceneAsset();
-        
-        string json = JsonConvert.SerializeObject(scene, Formatting.Indented);
-        File.WriteAllText(Application.dataPath + "/capyScene.json", json);
-    }
-    
     public void GenerateAsBinary()
     {
         var scene = CreateSceneAsset();
         
-        // todo
+        using (FileStream fileStream = new FileStream(Application.streamingAssetsPath + $"/{_sceneContainer.name}.dat", FileMode.Create))
+        {
+            using (BinaryWriter writer = new BinaryWriter(fileStream))
+            {
+                // write scene bounds
+                scene.boundMin.WriteBinary(writer);
+                scene.boundMax.WriteBinary(writer);
+                
+                // write camera
+                scene.camera.WriteBinary(writer);
+                
+                // write each Material
+                writer.Write(scene.materials.Length);
+                foreach (var renderMaterial in scene.materials)
+                {
+                    renderMaterial.WriteBinary(writer);
+                }
+                
+                // write all triangles
+
+                writer.Write(scene.triangles.Length);
+
+                foreach (var triangle in scene.triangles)
+                {
+                    triangle.WriteBinary(writer);
+                }
+                
+                // write lights
+                writer.Write(scene.lights.Length);
+                
+                foreach (var renderLight in scene.lights)
+                {
+                    renderLight.WriteBinary(writer);   
+                }
+            }
+        }
+    }
+
+    public static SerializedScene DeserializeScene(string path)
+    {
+        SerializedScene scene = new SerializedScene();
+        
+        using (FileStream fileStream = new FileStream(path, FileMode.Open))
+        {
+            using (BinaryReader reader = new BinaryReader(fileStream))
+            {
+                // read scene bounds
+                scene.boundMin = SceneBinaryRead.ReadFloat3(reader);
+                scene.boundMax = SceneBinaryRead.ReadFloat3(reader);
+                
+                // read camera
+                scene.camera = SceneBinaryRead.ReadCamera(reader);
+                
+                // read each Material
+                scene.qtyMaterials = reader.ReadInt32();
+                scene.materials = new RenderMaterial[scene.qtyMaterials];
+                
+                for (int m = 0; m < scene.qtyMaterials; m++)
+                {
+                    scene.materials[m] = SceneBinaryRead.ReadMaterial(reader);
+                }
+                
+                // read all triangles
+                scene.qtyTriangles = reader.ReadInt32();
+                scene.triangles = new RenderTriangle[scene.qtyTriangles];
+                
+                for (int t = 0; t < scene.qtyTriangles; t++)
+                {
+                    RenderTriangle triangle = SceneBinaryRead.ReadTriangle(reader);
+                    scene.triangles[t] = triangle;
+                }
+                
+                // read lights
+                scene.qtyLights = reader.ReadInt32();
+                scene.lights = new RenderLight[scene.qtyLights];
+
+                for (int l = 0; l < scene.qtyLights; l++)
+                {
+                    scene.lights[l] = SceneBinaryRead.ReadLight(reader);
+                }
+            }
+        }
+
+        return scene;
     }
 }
