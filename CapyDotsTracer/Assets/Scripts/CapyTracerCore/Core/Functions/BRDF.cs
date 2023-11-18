@@ -62,6 +62,8 @@ namespace CapyTracerCore.Core
         {
             switch (data.specularMode)
             {
+                case (byte) ESpecularMode.Phong:
+                    return GetPhong(data);
                 case (byte) ESpecularMode.BlinnPhong:
                     return GetBlinnPhong(data);
                 case (byte) ESpecularMode.CookTorrence:
@@ -102,12 +104,19 @@ namespace CapyTracerCore.Core
             return math.saturate(math.dot(data.N, data.L)) *  orenNayar;
         }
         
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float GetPhong(in BRDFData data)
+        {
+            float3 reflect = math.saturate(math.reflect(data.L, data.N));
+            float specDot = math.saturate(math.dot(data.V, reflect));
+            return math.pow(specDot, 8f);
+        }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float GetBlinnPhong(in BRDFData data)
         {
-            float specDot = math.max(math.dot(data.N, data.H), 0);
-            return math.pow(specDot, 128) * (1f - data.roughness);
+            float specDot = math.saturate(math.dot(data.N, data.H));
+            return math.pow(specDot, 16f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

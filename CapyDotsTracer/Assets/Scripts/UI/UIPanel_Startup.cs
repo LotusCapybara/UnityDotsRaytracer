@@ -68,6 +68,7 @@ public class UIPanel_Startup : MonoBehaviour
             new() { text = "480x340" },
             new() { text = "640x480" },
             new() { text = "800x600" },
+            new() { text = "1280x720" },
         };
         _dropdownResolution.SetValueWithoutNotify(PlayerPrefs.GetInt("dropResolution", 0));
 
@@ -80,6 +81,7 @@ public class UIPanel_Startup : MonoBehaviour
 
         _dropdownSpecularMode.options = new List<TMP_Dropdown.OptionData>
         {
+            new() { text   = ESpecularMode.Phong.ToString() },
             new() { text   = ESpecularMode.BlinnPhong.ToString() },
             new() { text   = ESpecularMode.CookTorrence.ToString() },
         };
@@ -124,6 +126,9 @@ public class UIPanel_Startup : MonoBehaviour
                 break;
             case 2:
                 width = 800; height = 600;
+                break;
+            case 3:
+                width = 1280; height = 720;
                 break;
         }
         

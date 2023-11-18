@@ -7,7 +7,7 @@
 
     public enum ESpecularMode
     {
-        BlinnPhong, CookTorrence
+        Phong, BlinnPhong, CookTorrence
     }
     
     public struct TracerSettings
